@@ -21,8 +21,43 @@ public static class SetsAndMaps
     /// <param name="words">An array of 2-character words (lowercase, no duplicates)</param>
     public static string[] FindPairs(string[] words)
     {
-        // TODO Problem 1 - ADD YOUR CODE HERE
-        return [];
+        // Create a set for O(1) lookup
+        var wordSet = new HashSet<string>(words);
+        var result = new List<string>();
+        var processedPairs = new HashSet<string>();
+
+        foreach (var word in words)
+        {
+            // Skip words where both letters are the same (e.g., "aa")
+            if (word[0] == word[1])
+            {
+                continue;
+            }
+
+            // Create the reverse of the word
+            var reversed = new string(new[] { word[1], word[0] });
+
+            // Check if the reversed word exists in the set
+            if (wordSet.Contains(reversed))
+            {
+                // Create a canonical representation to avoid duplicates
+                // (sort the two words alphabetically)
+                var pair1 = word;
+                var pair2 = reversed;
+                var canonicalPair = string.Compare(pair1, pair2) < 0 
+                    ? $"{pair1},{pair2}" 
+                    : $"{pair2},{pair1}";
+
+                // Only add if we haven't processed this pair yet
+                if (!processedPairs.Contains(canonicalPair))
+                {
+                    result.Add($"{word} & {reversed}");
+                    processedPairs.Add(canonicalPair);
+                }
+            }
+        }
+
+        return result.ToArray();
     }
 
     /// <summary>
@@ -42,7 +77,22 @@ public static class SetsAndMaps
         foreach (var line in File.ReadLines(filename))
         {
             var fields = line.Split(",");
-            // TODO Problem 2 - ADD YOUR CODE HERE
+            
+            // The degree is in the 4th column (index 3)
+            if (fields.Length > 3)
+            {
+                var degree = fields[3].Trim();
+                
+                // Add or increment the count for this degree
+                if (degrees.ContainsKey(degree))
+                {
+                    degrees[degree]++;
+                }
+                else
+                {
+                    degrees[degree] = 1;
+                }
+            }
         }
 
         return degrees;
@@ -66,8 +116,57 @@ public static class SetsAndMaps
     /// </summary>
     public static bool IsAnagram(string word1, string word2)
     {
-        // TODO Problem 3 - ADD YOUR CODE HERE
-        return false;
+        // Remove spaces and convert to lowercase
+        var cleanWord1 = word1.Replace(" ", "").ToLower();
+        var cleanWord2 = word2.Replace(" ", "").ToLower();
+
+        // If lengths are different, they can't be anagrams
+        if (cleanWord1.Length != cleanWord2.Length)
+        {
+            return false;
+        }
+
+        // Count the frequency of each character in word1
+        var charCount = new Dictionary<char, int>();
+        
+        foreach (var c in cleanWord1)
+        {
+            if (charCount.ContainsKey(c))
+            {
+                charCount[c]++;
+            }
+            else
+            {
+                charCount[c] = 1;
+            }
+        }
+
+        // Subtract the frequency for each character in word2
+        foreach (var c in cleanWord2)
+        {
+            if (!charCount.ContainsKey(c))
+            {
+                return false; // Character in word2 not found in word1
+            }
+            
+            charCount[c]--;
+            
+            if (charCount[c] < 0)
+            {
+                return false; // More occurrences in word2 than word1
+            }
+        }
+
+        // Check that all counts are zero
+        foreach (var count in charCount.Values)
+        {
+            if (count != 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -96,11 +195,22 @@ public static class SetsAndMaps
 
         var featureCollection = JsonSerializer.Deserialize<FeatureCollection>(json, options);
 
-        // TODO Problem 5:
-        // 1. Add code in FeatureCollection.cs to describe the JSON using classes and properties 
-        // on those classes so that the call to Deserialize above works properly.
-        // 2. Add code below to create a string out each place a earthquake has happened today and its magitude.
-        // 3. Return an array of these string descriptions.
-        return [];
+        // Create formatted strings for each earthquake
+        var results = new List<string>();
+        
+        if (featureCollection?.Features != null)
+        {
+            foreach (var feature in featureCollection.Features)
+            {
+                if (feature?.Properties != null)
+                {
+                    var place = feature.Properties.Place ?? "Unknown location";
+                    var magnitude = feature.Properties.Mag;
+                    results.Add($"{place} - Mag {magnitude}");
+                }
+            }
+        }
+
+        return results.ToArray();
     }
 }
